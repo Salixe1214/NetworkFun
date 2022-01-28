@@ -45,16 +45,19 @@ ANetworkFunCharacter::ANetworkFunCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
+
+	// Rolling for stats
+	stats.wis = rollStats();
+	stats.cons = rollStats();
+	stats.dex = rollStats();
+	stats.inte = rollStats();
+	stats.str = rollStats();
 }
 
 //////////////////////////////////////////////////////////////////////////
 // Input
-
 void ANetworkFunCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
-	acc = 2.0f;
-
-
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
@@ -101,6 +104,15 @@ void ANetworkFunCharacter::CreateMenu()
 	}
 }
 
+void ANetworkFunCharacter::Reroll()
+{
+	// Rolling for stats
+	stats.wis = rollStats();
+	stats.cons = rollStats();
+	stats.dex = rollStats();
+	stats.inte = rollStats();
+	stats.str = rollStats();
+}
 
 void ANetworkFunCharacter::OnResetVR()
 {
@@ -123,6 +135,44 @@ void ANetworkFunCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector L
 		StopJumping();
 }
 
+int ANetworkFunCharacter::rollStats()
+{
+	int32 d1, d2, d3, d4;
+	d1 = rand() % 6 + 1;
+	d2 = rand() % 6 + 1;
+	d3 = rand() % 6 + 1;
+	d4 = rand() % 6 + 1;
+
+	int32 r1, r2, r3;
+	int32 smol;
+
+	if (d1 > d2)
+	{
+		r1 = d1;
+		smol = d2;
+	}
+	else
+	{
+		r1 = d2;
+		smol = d1;
+	}
+
+	if (d3 > smol)
+		r2 = d3;
+	else
+	{
+		r2 = smol;
+		smol = d3;
+	}
+
+	if (d4 > smol)
+		r3 = d4;
+	else
+		r3 = smol;
+
+	return r1 + r2 + r3;
+}
+
 void ANetworkFunCharacter::Pause()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Black, TEXT("Allo \U0001f604"));
@@ -139,6 +189,7 @@ void ANetworkFunCharacter::Pause()
 				PC->bEnableClickEvents = true;
 				PC->bEnableMouseOverEvents = true;
 			}
+			BaseTurnRate = 0;
 			PauseMenuWidget->SetVisibility(ESlateVisibility::Visible);
 			break;
 		default:
@@ -148,6 +199,7 @@ void ANetworkFunCharacter::Pause()
 				PC->bEnableClickEvents = true;
 				PC->bEnableMouseOverEvents = true;
 			}
+			BaseTurnRate = 45.0f;
 			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
@@ -191,37 +243,18 @@ void ANetworkFunCharacter::MoveRight(float Value)
 		// get right vector 
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::Y);
 		// add movement in that direction
-		AddMovementInput(Direction, Value * acc);
+		AddMovementInput(Direction, Value);
 	}
 }
 
 void ANetworkFunCharacter::StartSprint()
 {
-	FString TheFloatStr = FString::SanitizeFloat(acc);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Red, *TheFloatStr);
-	TheFloatStr = FString::SanitizeFloat(GetCharacterMovement()->MaxWalkSpeed);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Blue, *TheFloatStr);
-	UWorld* wworld = GEngine->GameViewport->GetWorld();
-	TheFloatStr = FString::SanitizeFloat(wworld->URL.Port);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Black, *TheFloatStr);
-
-	GetCharacterMovement()->MaxWalkSpeed *= acc;
-	GetCharacterMovement()->JumpZVelocity *= acc;
-
-	TheFloatStr = FString::SanitizeFloat(GetCharacterMovement()->MaxWalkSpeed);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Orange, *TheFloatStr);
+	GetCharacterMovement()->MaxWalkSpeed *= 2;
+	GetCharacterMovement()->JumpZVelocity *= 2;
 }
 
 void ANetworkFunCharacter::StopSprint()
 {
-	FString TheFloatStr = FString::SanitizeFloat(acc);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Red, *TheFloatStr);
-	TheFloatStr = FString::SanitizeFloat(GetCharacterMovement()->MaxWalkSpeed);
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Blue, *TheFloatStr);
-
-	GetCharacterMovement()->MaxWalkSpeed /= acc;
-	GetCharacterMovement()->JumpZVelocity /= acc;
-
-	TheFloatStr = FString::SanitizeFloat(GetCharacterMovement()->GetMaxSpeed());
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Orange, *TheFloatStr);
+	GetCharacterMovement()->MaxWalkSpeed /= 2;
+	GetCharacterMovement()->JumpZVelocity /= 2;
 }

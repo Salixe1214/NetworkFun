@@ -7,6 +7,26 @@
 #include "MyPauseBPBase.h"
 #include "NetworkFunCharacter.generated.h"
 
+// Those are D&D style statistics
+USTRUCT(BlueprintType)
+struct FMyStatistics
+{
+	GENERATED_USTRUCT_BODY()
+public:
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+	int32 str;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 dex;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 wis;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 cons;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite)
+	int32 inte;
+
+	FMyStatistics(){}
+};
+
 UCLASS(config=Game)
 class ANetworkFunCharacter : public ACharacter
 {
@@ -29,8 +49,13 @@ public:
 	/** Base look up/down rate, in deg/sec. Other scaling may affect final rate. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category=Camera)
 	float BaseLookUpRate;
-
 protected:
+
+	// Stats
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		FMyStatistics stats;
+	UFUNCTION(BlueprintCallable)
+		void Reroll();
 
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();
@@ -46,22 +71,15 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void StopSprint();
 
-	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Mouvement")
-	float acc = 2.0f;
-
-	// The class that will be used for the Items Nameplate
+	// UI Widget
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
 		TSubclassOf<class UUserWidget> PauseMenuUIClass;
-
-	// The instance of the players Inventory UI Widget
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
 		class UMyPauseBPBase* PauseMenuWidget;
-
 	UFUNCTION(BlueprintCallable)
-	void CreateMenu();
-
+		void CreateMenu();
 	UFUNCTION(BlueprintCallable)
-	void Pause();
+		void Pause();
 
 	/** 
 	 * Called via input to turn at a given rate. 
@@ -80,6 +98,9 @@ protected:
 
 	/** Handler for when a touch input stops. */
 	void TouchStopped(ETouchIndex::Type FingerIndex, FVector Location);
+
+	// Utility functions
+	int rollStats();
 
 protected:
 	// APawn interface
