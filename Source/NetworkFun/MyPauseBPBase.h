@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "Kismet/KismetSystemLibrary.h"
 #include "Blueprint/UserWidget.h"
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
@@ -23,7 +24,11 @@ public:
 
     UPROPERTY(meta = (BindWidget))
         class UButton* Quit;
+    UPROPERTY(meta = (BindWidget))
+        class UButton* Menu;
 
     UFUNCTION()
         void OnMenuClick();
+    UFUNCTION()
+        void OnQuitClick();
 };
