@@ -83,20 +83,20 @@ void ANetworkFunCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 void ANetworkFunCharacter::CreateMenu() 
 {
 	GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Black, TEXT("Allo \U0001f604"));
-	if (NameplateUIClass)
+	if (PauseMenuUIClass)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Black, TEXT("Allo2 \U0001f604"));
-		if (!NameplateWidget)
+		if (!PauseMenuWidget)
 		{
 			GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Black, TEXT("Allo3 \U0001f604"));
-			NameplateWidget = CreateWidget<UMyPauseBPBase>(GetWorld()->GetGameInstance(), NameplateUIClass);
-			if (!NameplateWidget)
+			PauseMenuWidget = CreateWidget<UMyPauseBPBase>(GetWorld()->GetGameInstance(), PauseMenuUIClass);
+			if (!PauseMenuWidget)
 			{
 				return;
 			}
 
-			NameplateWidget->AddToViewport();
-			//NameplateWidget->SetVisibility(ESlateVisibility::Hidden);
+			PauseMenuWidget->AddToViewport();
+			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
 }
@@ -126,10 +126,30 @@ void ANetworkFunCharacter::TouchStopped(ETouchIndex::Type FingerIndex, FVector L
 void ANetworkFunCharacter::Pause()
 {
 	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Black, TEXT("Allo \U0001f604"));
-	if (NameplateWidget) 
+	if (PauseMenuWidget)
 	{
 		GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Black, TEXT("Allo9 \U0001f604"));
-		NameplateWidget->SetVisibility(ESlateVisibility::Visible);
+		APlayerController* PC = Cast<APlayerController>(GetController());
+		switch (PauseMenuWidget->GetVisibility())
+		{
+		case ESlateVisibility::Hidden:
+			if (PC)
+			{
+				PC->bShowMouseCursor = true;
+				PC->bEnableClickEvents = true;
+				PC->bEnableMouseOverEvents = true;
+			}
+			PauseMenuWidget->SetVisibility(ESlateVisibility::Visible);
+			break;
+		default:
+			if (PC)
+			{
+				PC->bShowMouseCursor = false;
+				PC->bEnableClickEvents = true;
+				PC->bEnableMouseOverEvents = true;
+			}
+			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
+		}
 	}
 }
 

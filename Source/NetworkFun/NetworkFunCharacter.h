@@ -51,11 +51,11 @@ protected:
 
 	// The class that will be used for the Items Nameplate
 	UPROPERTY(EditDefaultsOnly, BlueprintReadWrite, Category = UI)
-		TSubclassOf<class UMyPauseBPBase> NameplateUIClass;
+		TSubclassOf<class UUserWidget> PauseMenuUIClass;
 
 	// The instance of the players Inventory UI Widget
 	UPROPERTY(VisibleDefaultsOnly, BlueprintReadOnly, Category = UI)
-		class UMyPauseBPBase* NameplateWidget;
+		class UMyPauseBPBase* PauseMenuWidget;
 
 	UFUNCTION(BlueprintCallable)
 	void CreateMenu();
