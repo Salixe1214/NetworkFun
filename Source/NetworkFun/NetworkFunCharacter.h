@@ -54,8 +54,21 @@ protected:
 	// Stats
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
 		FMyStatistics stats;
+	// Use to reroll the stats (probably hidden function?)
 	UFUNCTION(BlueprintCallable)
 		void Reroll();
+	// Define how much life a player can have
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		int32 maxHealth;
+	// Define the amount of life a player have
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		float health;
+	// Define the speed
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		float speed;
+	// Define how much you accelerate
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Stats")
+		float accelerationMultiplier;
 
 	/** Resets HMD orientation in VR. */
 	void OnResetVR();

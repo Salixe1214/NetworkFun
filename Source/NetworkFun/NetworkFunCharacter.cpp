@@ -30,7 +30,7 @@ ANetworkFunCharacter::ANetworkFunCharacter()
 	GetCharacterMovement()->bOrientRotationToMovement = true; // Character moves in the direction of input...	
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 540.0f, 0.0f); // ...at this rotation rate
 	GetCharacterMovement()->JumpZVelocity = 600.f;
-	GetCharacterMovement()->AirControl = 0.2f;
+	GetCharacterMovement()->AirControl = 1.0f;
 
 	// Create a camera boom (pulls in towards the player if there is a collision)
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
@@ -47,11 +47,8 @@ ANetworkFunCharacter::ANetworkFunCharacter()
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
 	// Rolling for stats
-	stats.wis = rollStats();
-	stats.cons = rollStats();
-	stats.dex = rollStats();
-	stats.inte = rollStats();
-	stats.str = rollStats();
+	health = 100;
+	
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -63,6 +60,7 @@ void ANetworkFunCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &ACharacter::Jump);
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ANetworkFunCharacter::Pause);
+	PlayerInputComponent->BindAction("ReRoll", IE_Pressed, this, &ANetworkFunCharacter::Reroll);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ANetworkFunCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ANetworkFunCharacter::MoveRight);
@@ -85,13 +83,11 @@ void ANetworkFunCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 
 void ANetworkFunCharacter::CreateMenu() 
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Black, TEXT("Allo \U0001f604"));
+	Reroll();
 	if (PauseMenuUIClass)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Black, TEXT("Allo2 \U0001f604"));
 		if (!PauseMenuWidget)
 		{
-			GEngine->AddOnScreenDebugMessage(-1, 5.0, FColor::Black, TEXT("Allo3 \U0001f604"));
 			PauseMenuWidget = CreateWidget<UMyPauseBPBase>(GetWorld()->GetGameInstance(), PauseMenuUIClass);
 			if (!PauseMenuWidget)
 			{
@@ -112,6 +108,20 @@ void ANetworkFunCharacter::Reroll()
 	stats.dex = rollStats();
 	stats.inte = rollStats();
 	stats.str = rollStats();
+	maxHealth = stats.cons * 5;
+	FString consStr = FString::FromInt(stats.cons);
+	FString maxHealthStr = FString::FromInt(maxHealth);
+
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0, FColor::Black, *maxHealthStr);
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0, FColor::Black, TEXT("Max Health:"));
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0, FColor::Black, *consStr);
+	if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0, FColor::Black, TEXT("Constitution:"));
+
+	if(health > maxHealth)
+		health = maxHealth;
+	speed = GetCharacterMovement()->MaxWalkSpeed * ((stats.dex + stats.str) / 20.0f);
+	GetCharacterMovement()->MaxWalkSpeed = speed;
+	accelerationMultiplier = ((stats.dex + stats.str) / 40.0f) + 1;
 }
 
 void ANetworkFunCharacter::OnResetVR()
@@ -175,10 +185,8 @@ int ANetworkFunCharacter::rollStats()
 
 void ANetworkFunCharacter::Pause()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Black, TEXT("Allo \U0001f604"));
 	if (PauseMenuWidget)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 1.0, FColor::Black, TEXT("Allo9 \U0001f604"));
 		APlayerController* PC = Cast<APlayerController>(GetController());
 		switch (PauseMenuWidget->GetVisibility())
 		{
@@ -189,7 +197,8 @@ void ANetworkFunCharacter::Pause()
 				PC->bEnableClickEvents = true;
 				PC->bEnableMouseOverEvents = true;
 			}
-			BaseTurnRate = 0;
+			BaseTurnRate = 0.0f;
+			BaseLookUpRate = 0.0f;
 			PauseMenuWidget->SetVisibility(ESlateVisibility::Visible);
 			break;
 		default:
@@ -200,6 +209,7 @@ void ANetworkFunCharacter::Pause()
 				PC->bEnableMouseOverEvents = true;
 			}
 			BaseTurnRate = 45.0f;
+			BaseLookUpRate = 45.f;
 			PauseMenuWidget->SetVisibility(ESlateVisibility::Hidden);
 		}
 	}
@@ -228,7 +238,7 @@ void ANetworkFunCharacter::MoveForward(float Value)
 		// get forward vector
 		const FVector Direction = FRotationMatrix(YawRotation).GetUnitAxis(EAxis::X);
 
-		AddMovementInput(Direction, Value);
+		AddMovementInput(Direction, Value );
 	}
 }
 
@@ -249,12 +259,12 @@ void ANetworkFunCharacter::MoveRight(float Value)
 
 void ANetworkFunCharacter::StartSprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed *= 2;
-	GetCharacterMovement()->JumpZVelocity *= 2;
+	GetCharacterMovement()->MaxWalkSpeed *= accelerationMultiplier;
+	GetCharacterMovement()->JumpZVelocity *= accelerationMultiplier;
 }
 
 void ANetworkFunCharacter::StopSprint()
 {
-	GetCharacterMovement()->MaxWalkSpeed /= 2;
-	GetCharacterMovement()->JumpZVelocity /= 2;
+	GetCharacterMovement()->MaxWalkSpeed /= accelerationMultiplier;
+	GetCharacterMovement()->JumpZVelocity /= accelerationMultiplier;
 }
