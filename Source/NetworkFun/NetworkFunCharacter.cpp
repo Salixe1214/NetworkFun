@@ -43,6 +43,15 @@ ANetworkFunCharacter::ANetworkFunCharacter()
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
 
+	FPCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FPCamera"));
+	FPCamera->SetupAttachment(GetMesh(), "head");
+	FPCamera->SetWorldRotation(FQuat(0, 0, 0, 1));
+	FPCamera->SetRelativeLocation(FVector(0, 15, 0));
+	FPCamera->bUsePawnControlRotation = true;
+	FPCamera->SetActive(false);
+
+	isFPS = false;
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named MyCharacter (to avoid direct content references in C++)
 
@@ -61,6 +70,7 @@ void ANetworkFunCharacter::SetupPlayerInputComponent(class UInputComponent* Play
 	PlayerInputComponent->BindAction("Jump", IE_Released, this, &ACharacter::StopJumping);
 	PlayerInputComponent->BindAction("Pause", IE_Pressed, this, &ANetworkFunCharacter::Pause);
 	PlayerInputComponent->BindAction("ReRoll", IE_Pressed, this, &ANetworkFunCharacter::Reroll);
+	PlayerInputComponent->BindAction("FPS", IE_Pressed, this, &ANetworkFunCharacter::ToggleFPS);
 
 	PlayerInputComponent->BindAxis("MoveForward", this, &ANetworkFunCharacter::MoveForward);
 	PlayerInputComponent->BindAxis("MoveRight", this, &ANetworkFunCharacter::MoveRight);
@@ -267,4 +277,23 @@ void ANetworkFunCharacter::StopSprint()
 {
 	GetCharacterMovement()->MaxWalkSpeed /= accelerationMultiplier;
 	GetCharacterMovement()->JumpZVelocity /= accelerationMultiplier;
+}
+
+void ANetworkFunCharacter::ToggleFPS()
+{
+	if (!isFPS)
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0, FColor::Black, TEXT("Toggle: On"));
+		FollowCamera->SetActive(false);
+		FPCamera->SetActive(true);
+		bUseControllerRotationYaw = true;
+	}
+	else
+	{
+		if (GEngine) GEngine->AddOnScreenDebugMessage(-1, 10.0, FColor::Black, TEXT("Toggle: Off"));
+		FollowCamera->SetActive(true);
+		FPCamera->SetActive(false);
+		bUseControllerRotationYaw = false;
+	}
+	isFPS = !isFPS;
 }
